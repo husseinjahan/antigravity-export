@@ -1,0 +1,42 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  pypi-publish:
+    name: Build and publish Python 🐍 distribution 📦 to PyPI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build binary wheel and source tarball
+        run: python -m build
+
+      - name: Verify package metadata with twine
+        run: twine check --strict dist/*
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Uses PyPI Trusted Publishing via OpenID Connect (OIDC)
+          # Alternatively, use secrets.PYPI_API_TOKEN if configured
+          skip-existing: true

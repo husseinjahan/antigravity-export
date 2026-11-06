@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=64.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "antigravity-export"
+version = "1.0.0"
+description = "Export and recover Google Antigravity conversations, diffs, and project histories via Language Server."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Kayvan Jahanbakhsh", email = "jahanbakhsh@live.com" }
+]
+keywords = [
+    "antigravity",
+    "language-server",
+    "gemini",
+    "export",
+    "markdown",
+    "html",
+    "diff",
+    "git-patch",
+    "recovery",
+]
+dependencies = [
+    "requests>=2.31.0",
+    "urllib3>=2.0.0",
+    "rich>=13.0.0",
+    "typer>=0.9.0",
+    "jinja2>=3.1.0",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "build>=1.0.0",
+    "twine>=5.0.0",
+]
+
+[project.scripts]
+agexport = "antigravity_export.cli:app"
+antigravity-export = "antigravity_export.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/your-username/antigravity-export"
+Repository = "https://github.com/your-username/antigravity-export.git"
+Issues = "https://github.com/your-username/antigravity-export/issues"
+Documentation = "https://github.com/your-username/antigravity-export#readme"
+
+[tool.setuptools.packages.find]
+where = ["src"]
