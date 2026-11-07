@@ -65,3 +65,44 @@ def test_parse_planner_response_with_tools():
     assert len(msg.file_changes) == 1
     assert msg.file_changes[0].path == "hello.py"
     assert msg.file_changes[0].change_type == "create"
+
+
+def test_parse_code_action_dict_path():
+    parser = StepParser()
+    step = {
+        "type": "CORTEX_STEP_TYPE_CODE_ACTION",
+        "codeAction": {
+            "actionSpec": {
+                "createFile": {
+                    "path": {
+                        "absoluteUri": "file:///d:/w/pay/rayanban-admin/app/(panel)/report/tiam/page.tsx"
+                    }
+                }
+            }
+        },
+        "metadata": {"createdAt": "2026-11-06T10:05:00Z"},
+    }
+    msg = parser.parse_single_step(step)
+    assert msg is not None
+    assert msg.role == "tool"
+    assert len(msg.file_changes) == 1
+    fc = msg.file_changes[0]
+    assert isinstance(fc.path, str)
+    assert "tiam" in fc.path
+    assert fc.change_type == "create"
+
+
+def test_parse_view_file_uri():
+    parser = StepParser()
+    step = {
+        "type": "CORTEX_STEP_TYPE_VIEW_FILE",
+        "viewFile": {
+            "absolutePathUri": "file:///d:/w/pay/test.py",
+            "numLines": 50,
+        },
+    }
+    msg = parser.parse_single_step(step)
+    assert msg is not None
+    assert len(msg.tool_calls) == 1
+    assert isinstance(msg.tool_calls[0].args["path"], str)
+    assert "test.py" in msg.tool_calls[0].args["path"]

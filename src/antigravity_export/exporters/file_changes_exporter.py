@@ -42,7 +42,7 @@ class FileChangesExporter:
         total_dels = 0
         for fc in changes:
             fc.compute_stats()
-            by_file[fc.path].append(fc)
+            by_file[str(fc.path or "")].append(fc)
             total_adds += fc.additions
             total_dels += fc.deletions
 
@@ -121,7 +121,7 @@ class FileChangesExporter:
         total_adds = 0
         total_dels = 0
         for fc in all_changes:
-            by_file[fc.path].append(fc)
+            by_file[str(fc.path or "")].append(fc)
             total_adds += fc.additions
             total_dels += fc.deletions
 

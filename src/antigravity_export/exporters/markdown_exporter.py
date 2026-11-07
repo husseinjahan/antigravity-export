@@ -55,7 +55,7 @@ class MarkdownExporter:
             lines.append("| File Path | Type | Added | Deleted |")
             lines.append("| :--- | :---: | :---: | :---: |")
             for fc in conv.file_changes:
-                lines.append(f"| `{fc.path}` | `{fc.change_type}` | +{fc.additions} | -{fc.deletions} |")
+                lines.append(f"| `{str(fc.path or '')}` | `{str(fc.change_type or '')}` | +{fc.additions} | -{fc.deletions} |")
             lines.extend(["", "---", ""])
 
         # Conversation turns
@@ -124,7 +124,8 @@ class MarkdownExporter:
     def _format_file_change(self, fc) -> list[str]:
         lines = []
         stats = f"(+{fc.additions} / -{fc.deletions})"
-        lines.append(f"#### 📝 File Edit: `{fc.path}` {stats}")
+        path_str = str(fc.path or "")
+        lines.append(f"#### 📝 File Edit: `{path_str}` {stats}")
         if fc.artifact_summary:
             lines.append(f"> {fc.artifact_summary}")
         if fc.unified_diff:

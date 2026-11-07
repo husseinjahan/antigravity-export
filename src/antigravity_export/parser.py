@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
-from antigravity_export.models import FileChange, Message, ToolCall
+from antigravity_export.models import FileChange, Message, ToolCall, normalize_file_path
 
 _DIFF_PREFIX = {
     "UNIFIED_DIFF_LINE_TYPE_INSERT": "+",
@@ -43,7 +43,8 @@ def create_diff_from_replacement(
     replacement: str,
 ) -> str:
     """Generate a standard unified diff between target and replacement text."""
-    fname = Path(file_path).name or "file"
+    clean_path = normalize_file_path(file_path)
+    fname = Path(clean_path).name if clean_path else "file"
     from_lines = target.splitlines(keepends=True)
     to_lines = replacement.splitlines(keepends=True)
     diff = list(
@@ -229,7 +230,7 @@ class StepParser:
         args = tc.args
 
         if "write_file" in name or name == "write":
-            path = args.get("Path") or args.get("path") or ""
+            path = normalize_file_path(args.get("Path") or args.get("path") or "")
             content = args.get("Content") or args.get("content") or ""
             if path:
                 diff = f"+++ b/{Path(path).name}\n" + "\n".join(f"+{l}" for l in content.splitlines())
@@ -245,7 +246,7 @@ class StepParser:
                 return fc
 
         if "edit_file" in name or name == "edit":
-            path = args.get("Path") or args.get("path") or ""
+            path = normalize_file_path(args.get("Path") or args.get("path") or "")
             target = args.get("Target") or args.get("target") or ""
             replacement = args.get("Replacement") or args.get("replacement") or ""
             if path:
@@ -276,10 +277,20 @@ class StepParser:
 
         action_result = ca.get("actionResult", {})
         edit = action_result.get("edit", {})
+        create_file = ca.get("actionSpec", {}).get("createFile", {})
+        raw_path = ""
         if edit.get("absoluteUri"):
-            file_path = edit["absoluteUri"]
-        elif ca.get("actionSpec", {}).get("createFile", {}).get("path"):
-            file_path = ca["actionSpec"]["createFile"]["path"]
+            raw_path = edit["absoluteUri"]
+        elif edit.get("path"):
+            raw_path = edit["path"]
+        elif isinstance(create_file, dict):
+            raw_path = create_file.get("path") or create_file.get("absoluteUri") or ""
+        elif create_file:
+            raw_path = create_file
+
+        file_path = normalize_file_path(raw_path)
+        is_create = bool(create_file or edit.get("createFile"))
+        change_type = "create" if is_create else "modify"
 
         summary = f"[Code Edit] {file_path}" if file_path else "[Code Edit]"
         if description:
@@ -292,7 +303,7 @@ class StepParser:
         if file_path:
             fc = FileChange(
                 path=file_path,
-                change_type="modify",
+                change_type=change_type,
                 unified_diff=diff if diff else None,
                 artifact_summary=artifact.get("summary"),
                 timestamp=created_at,
@@ -356,7 +367,8 @@ class StepParser:
         step_index: Optional[int],
     ) -> Message:
         vf = step.get("viewFile", {})
-        path = vf.get("absolutePathUri") or vf.get("filePath") or vf.get("path") or ""
+        raw_path = vf.get("absolutePathUri") or vf.get("filePath") or vf.get("path") or ""
+        path = normalize_file_path(raw_path)
         num_lines = vf.get("numLines")
         num_bytes = vf.get("numBytes")
 

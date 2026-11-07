@@ -90,3 +90,25 @@ def test_file_changes_exporter():
     assert "src/app.py" in report
     patch = exporter.export_unified_patch(conv)
     assert "+++ b/src/app.py" in patch
+
+
+def test_html_exporter_with_dict_and_uri_file_changes():
+    fc = FileChange(
+        path={"absoluteUri": "file:///d:/w/pay/report/page.tsx"},  # type: ignore
+        change_type="create",
+        unified_diff="+++ b/page.tsx\n+import React from 'react';\n",
+        additions=1,
+        deletions=0,
+    )
+    msg = Message(role="tool", content="Created file", file_changes=[fc])
+    conv = Conversation(
+        conversation_id="conv-diff-dict",
+        title="Dict File Change Test",
+        project_name="dict-proj",
+        messages=[msg],
+    )
+    exporter = HTMLExporter()
+    html_out = exporter.export(conv)
+    assert "<!DOCTYPE html>" in html_out
+    assert "report" in html_out or "page.tsx" in html_out
+    assert "File Change:" in html_out

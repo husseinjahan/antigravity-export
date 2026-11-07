@@ -20,9 +20,9 @@ class HTMLExporter:
 
     def export(self, conv: Conversation) -> str:
         conv.aggregate_file_changes()
-        safe_title = html.escape(conv.title)
-        safe_id = html.escape(conv.conversation_id)
-        safe_project = html.escape(conv.project_name)
+        safe_title = html.escape(str(conv.title or ""))
+        safe_id = html.escape(str(conv.conversation_id or ""))
+        safe_project = html.escape(str(conv.project_name or ""))
 
         messages_html = "\n".join(self._render_message(m) for m in conv.messages)
 
@@ -33,8 +33,8 @@ class HTMLExporter:
             for fc in conv.file_changes:
                 rows.append(f"""
                 <tr>
-                    <td class="file-path"><code>{html.escape(fc.path)}</code></td>
-                    <td><span class="badge badge-info">{html.escape(fc.change_type)}</span></td>
+                    <td class="file-path"><code>{html.escape(str(fc.path or ""))}</code></td>
+                    <td><span class="badge badge-info">{html.escape(str(fc.change_type or ""))}</span></td>
                     <td class="diff-add">+{fc.additions}</td>
                     <td class="diff-del">-{fc.deletions}</td>
                 </tr>
@@ -337,13 +337,13 @@ class HTMLExporter:
         }
         cls_name = role_classes.get(msg.role, "message-system")
         icon = role_icons.get(msg.role, msg.role.title())
-        ts = f'<span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">{html.escape(msg.timestamp or "")}</span>'
+        ts = f'<span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">{html.escape(str(msg.timestamp or ""))}</span>'
 
         body_html = ""
 
         # Thinking section
         if self.include_thinking and msg.thinking:
-            safe_thinking = html.escape(msg.thinking.strip())
+            safe_thinking = html.escape(str(msg.thinking).strip())
             body_html += f"""
             <details>
                 <summary>💭 Thinking Process ({len(msg.thinking)} chars)</summary>
@@ -351,15 +351,15 @@ class HTMLExporter:
             </details>
             """
 
-        if msg.content.strip():
-            body_html += f'<div class="message-body">{html.escape(msg.content.strip())}</div>'
+        if msg.content and str(msg.content).strip():
+            body_html += f'<div class="message-body">{html.escape(str(msg.content).strip())}</div>'
 
         # File changes
         for fc in msg.file_changes:
             diff_lines_html = []
             if fc.unified_diff:
-                for line in fc.unified_diff.splitlines():
-                    esc_line = html.escape(line)
+                for line in str(fc.unified_diff).splitlines():
+                    esc_line = html.escape(str(line))
                     if line.startswith("+") and not line.startswith("+++"):
                         diff_lines_html.append(f'<span class="diff-line-add">{esc_line}</span>')
                     elif line.startswith("-") and not line.startswith("---"):
@@ -372,7 +372,7 @@ class HTMLExporter:
             diff_content = "\n".join(diff_lines_html)
             body_html += f"""
             <details open style="margin: 0.75rem 1.25rem;">
-                <summary>📝 File Change: <code>{html.escape(fc.path)}</code> (+{fc.additions} / -{fc.deletions})</summary>
+                <summary>📝 File Change: <code>{html.escape(str(fc.path or ""))}</code> (+{fc.additions} / -{fc.deletions})</summary>
                 <div class="details-content">
                     <pre class="diff-block"><code>{diff_content}</code></pre>
                 </div>

@@ -2,7 +2,32 @@
 Unit tests for domain models.
 """
 
-from antigravity_export.models import Conversation, FileChange, Message, ToolCall
+from antigravity_export.models import Conversation, FileChange, Message, ToolCall, normalize_file_path
+
+
+def test_normalize_file_path():
+    # Plain paths
+    assert normalize_file_path("src/main.py") == "src/main.py"
+    assert normalize_file_path("") == ""
+    assert normalize_file_path(None) == ""
+
+    # Dict wrappers
+    assert normalize_file_path({"path": "src/main.py"}) == "src/main.py"
+    assert normalize_file_path({"filePath": "src/main.py"}) == "src/main.py"
+    assert "report" in normalize_file_path({"absoluteUri": "file:///d:/w/pay/report/page.tsx"})
+
+    # Nested dict
+    assert "test.ts" in normalize_file_path({"createFile": {"path": {"absoluteUri": "file:///d:/w/test.ts"}}})
+
+
+def test_file_change_dict_path_normalization():
+    # FileChange with dict path
+    fc = FileChange(
+        path={"absoluteUri": "file:///d:/w/pay/report/page.tsx"},  # type: ignore
+        change_type="create",
+    )
+    assert isinstance(fc.path, str)
+    assert "report" in fc.path
 
 
 def test_file_change_stats_computation():

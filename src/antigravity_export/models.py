@@ -9,6 +9,54 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional
 from urllib.parse import unquote, urlparse
+from urllib.request import url2pathname
+
+
+def normalize_file_path(path_val: Any) -> str:
+    """Normalize a raw file path or URI (str or dict wrapper) into a clean, platform-friendly file path string."""
+    if not path_val:
+        return ""
+
+    while isinstance(path_val, dict):
+        next_val = (
+            path_val.get("absoluteUri")
+            or path_val.get("uri")
+            or path_val.get("filePath")
+            or path_val.get("path")
+            or path_val.get("filename")
+            or path_val.get("file")
+            or path_val.get("createFile")
+        )
+        if not next_val:
+            for v in path_val.values():
+                if isinstance(v, (dict, str)):
+                    res = normalize_file_path(v)
+                    if res:
+                        return res
+            break
+        path_val = next_val
+
+    if not isinstance(path_val, str):
+        path_val = str(path_val) if path_val is not None else ""
+
+    path_val = path_val.strip()
+    if not path_val:
+        return ""
+
+    # Handle file:// URIs (e.g. file:///d:/w/pay/... or file:///C:/...)
+    if path_val.startswith("file://"):
+        parsed = urlparse(path_val)
+        raw_path = unquote(parsed.path)
+        if parsed.netloc:
+            raw_path = f"{parsed.netloc}{raw_path}"
+        try:
+            return url2pathname(raw_path)
+        except Exception:
+            if len(raw_path) >= 3 and raw_path[0] == "/" and raw_path[2] == ":":
+                raw_path = raw_path[1:]
+            return raw_path
+
+    return path_val
 
 
 @dataclass
@@ -27,12 +75,17 @@ class FileChange:
     step_index: Optional[int] = None
     artifact_summary: Optional[str] = None
 
+    def __post_init__(self) -> None:
+        self.path = normalize_file_path(self.path)
+        if not isinstance(self.change_type, str):
+            self.change_type = str(self.change_type) if self.change_type is not None else "modify"
+
     def compute_stats(self) -> None:
         """Calculate additions and deletions from the unified diff if not set."""
         if self.unified_diff and (self.additions == 0 and self.deletions == 0):
             adds = 0
             dels = 0
-            for line in self.unified_diff.splitlines():
+            for line in str(self.unified_diff).splitlines():
                 if line.startswith("+") and not line.startswith("+++"):
                     adds += 1
                 elif line.startswith("-") and not line.startswith("---"):

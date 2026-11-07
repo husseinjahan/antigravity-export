@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "antigravity-export"
-version = "1.0.0"
+version = "1.0.1"
 description = "Export and recover Google Antigravity conversations, diffs, and project histories via Language Server."
 readme = "README.md"
 requires-python = ">=3.9"
